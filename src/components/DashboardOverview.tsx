@@ -29,6 +29,7 @@ import { RiskAppetiteIndicator } from './RiskAppetiteIndicator';
 import { RiskAppetiteNotifications } from './RiskAppetiteNotifications';
 import { VulnerabilityAgingTrendChart } from './VulnerabilityAgingTrendChart';
 import { DepartmentalVulnerabilityAgingChart } from './DepartmentalVulnerabilityAgingChart';
+import { DepartmentalVulnerabilityHeatmap } from './DepartmentalVulnerabilityHeatmap';
 
 interface DashboardOverviewProps {
   findings: AuditFinding[];
@@ -825,6 +826,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
       {/* Departmental Vulnerability Aging Trend & Prioritization Focus Chart */}
       <DepartmentalVulnerabilityAgingChart
+        findings={filteredFindings}
+        onSelectFinding={onSelectFinding}
+        onNavigateToTab={onNavigateToTab}
+      />
+
+      {/* D3.js Departmental Vulnerability Heatmap */}
+      <DepartmentalVulnerabilityHeatmap
         findings={filteredFindings}
         onSelectFinding={onSelectFinding}
         onNavigateToTab={onNavigateToTab}
