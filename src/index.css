@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --hijra-navy-dark: #071933;
+    --hijra-navy: #0b2447;
+    --hijra-navy-light: #163664;
+    --hijra-gold: #d4af37;
+    --hijra-gold-hover: #b8972e;
+    --hijra-emerald: #047857;
+  }
+}
+
+/* Custom scrollbars for dense audit tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #071933;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e3a5f;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d4af37;
+}

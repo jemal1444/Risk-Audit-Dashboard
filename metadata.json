@@ -1,0 +1,6 @@
+{
+  "name": "Risk & IT Audit Control Center",
+  "description": "Enterprise IS Security Control Audit, Real-Time Compliance Monitoring, and Automated Vulnerability Assessment Dashboard for Banking & Financial Institutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
