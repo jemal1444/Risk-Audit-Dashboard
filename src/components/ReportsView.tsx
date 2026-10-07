@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuditFinding, ControlTestMatrixRow, ITAsset } from '../types/audit';
+import { AuditFinding, ControlTestMatrixRow, ITAsset, Severity } from '../types/audit';
 import {
   FileText,
   Printer,
@@ -8,6 +8,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  FileDown,
+  Building2,
+  Sliders,
+  Check,
+  Sparkles,
+  Award,
 } from 'lucide-react';
 import { exportFindingsToCSV, exportAssetsToCSV } from '../utils/exportUtils';
 
@@ -22,8 +28,28 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   assets,
   controlTests,
 }) => {
-  const criticalFindings = findings.filter((f) => f.severity === 'Critical');
-  const overdueFindings = findings.filter((f) => f.status === 'Overdue' || f.agingDays > 90);
+  const [severityFilter, setSeverityFilter] = useState<'All' | 'Critical & High' | 'Critical Only'>('All');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [includeSignatures, setIncludeSignatures] = useState(true);
+  const [includeRectificationSchedule, setIncludeRectificationSchedule] = useState(true);
+
+  const displayedFindings = findings.filter((f) => {
+    if (severityFilter === 'Critical Only') return f.severity === 'Critical';
+    if (severityFilter === 'Critical & High') return f.severity === 'Critical' || f.severity === 'High';
+    return true;
+  });
+
+  const criticalFindings = displayedFindings.filter((f) => f.severity === 'Critical');
+  const overdueFindings = displayedFindings.filter((f) => f.status === 'Overdue' || f.agingDays > 90);
+
+  const handleGeneratePdf = () => {
+    setIsGeneratingPdf(true);
+    // Give browser a moment to update DOM before triggering print
+    setTimeout(() => {
+      window.print();
+      setIsGeneratingPdf(false);
+    }, 250);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -33,10 +59,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     <div className="space-y-4">
       {/* Top Banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm print:hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-400" />
+              <FileText className="h-5 w-5 text-amber-400" />
               <span>Audit Committee Pack &amp; Executive Compliance Dossier</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -44,21 +70,74 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Generate PDF Report Button */}
+            <button
+              onClick={handleGeneratePdf}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg transition-all shadow-md shadow-amber-950/40 border border-amber-300/40 cursor-pointer"
+              title="Format and generate professional PDF compliance report"
+            >
+              <FileDown className="h-4 w-4 stroke-[2.5]" />
+              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Generate PDF Report'}</span>
+            </button>
+
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-all cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5 text-blue-400" />
-              <span>Print / Save PDF</span>
+              <span>Quick Print</span>
             </button>
+
             <button
-              onClick={() => exportFindingsToCSV(findings)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all shadow-sm shadow-emerald-900/30"
+              onClick={() => exportFindingsToCSV(displayedFindings)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all shadow-sm shadow-emerald-900/30 cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>Export Audit Data (CSV/Excel)</span>
+              <span>Export CSV</span>
             </button>
+          </div>
+        </div>
+
+        {/* PDF Report Formatting Options */}
+        <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-400">PDF Scope:</span>
+            {(['All', 'Critical & High', 'Critical Only'] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setSeverityFilter(opt)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                  severityFilter === opt
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                }`}
+              >
+                {opt} ({findings.filter((f) => opt === 'All' ? true : opt === 'Critical Only' ? f.severity === 'Critical' : f.severity === 'Critical' || f.severity === 'High').length})
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-4 text-slate-300">
+            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeRectificationSchedule}
+                onChange={(e) => setIncludeRectificationSchedule(e.target.checked)}
+                className="rounded border-slate-700 text-amber-500 focus:ring-amber-400"
+              />
+              <span className="text-[11px]">Include Rectification Schedule</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeSignatures}
+                onChange={(e) => setIncludeSignatures(e.target.checked)}
+                className="rounded border-slate-700 text-amber-500 focus:ring-amber-400"
+              />
+              <span className="text-[11px]">Include Executive Signatures</span>
+            </label>
           </div>
         </div>
       </div>
@@ -102,9 +181,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
         {/* Section 2: Deficiency Summary Table */}
         <div className="space-y-2">
-          <h2 className="text-sm font-bold text-white print:text-black uppercase tracking-wide flex items-center gap-2">
-            <span className="text-amber-400">2.0</span> Summary of Audit Deficiencies &amp; Departmental Rectification
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white print:text-black uppercase tracking-wide flex items-center gap-2">
+              <span className="text-amber-400">2.0</span> Summary of Audit Deficiencies &amp; Departmental Rectification ({displayedFindings.length} Items)
+            </h2>
+            <span className="text-[10px] text-slate-400 print:text-gray-600 font-mono">
+              Filtered Scope: {severityFilter}
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border border-slate-800 print:border-gray-300">
               <thead className="bg-[#071933] print:bg-gray-100 text-amber-300 print:text-gray-700 text-[10px] uppercase">
@@ -120,7 +204,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 print:divide-gray-200">
-                {findings.map((f) => (
+                {displayedFindings.map((f) => (
                   <tr key={f.id} className="hover:bg-slate-800/40">
                     <td className="p-2 font-mono font-bold text-blue-400 print:text-blue-700">
                       {f.id}
@@ -181,6 +265,36 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
         </div>
 
+        {/* Section 2.1: Detailed Rectification Schedule & Milestones (Optional in PDF) */}
+        {includeRectificationSchedule && (
+          <div className="space-y-2 pt-2">
+            <h2 className="text-xs font-bold text-white print:text-black uppercase tracking-wide flex items-center gap-2">
+              <span className="text-amber-400">2.1</span> Departmental Action Milestones &amp; Remediation Timelines
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+              {displayedFindings.slice(0, 6).map((f) => (
+                <div key={f.id} className="p-2.5 rounded-lg border border-slate-800 print:border-gray-300 bg-slate-950/60 print:bg-gray-50">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-mono font-bold text-blue-400 print:text-blue-700">{f.id} • {f.departmentalUnit}</span>
+                    <span className="font-mono text-slate-400 print:text-gray-600">Due: {f.targetDate}</span>
+                  </div>
+                  <div className="font-semibold text-slate-200 print:text-black truncate mb-1">{f.title}</div>
+                  <div className="space-y-0.5 text-[10px] text-slate-400 print:text-gray-600">
+                    {f.milestones?.map((m, idx) => (
+                      <div key={idx} className="flex items-center justify-between">
+                        <span className="truncate">• {m.title}</span>
+                        <span className={m.completed ? 'text-emerald-400 print:text-green-700 font-bold' : 'text-amber-400 print:text-amber-700'}>
+                          {m.completed ? 'Done' : m.targetDate}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Section 3: Recommended Committee Action */}
         <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 print:bg-gray-50 print:border-gray-300 space-y-2">
           <h2 className="text-xs font-bold text-white print:text-black uppercase">
@@ -206,18 +320,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         </div>
 
         {/* Signatures */}
-        <div className="pt-6 border-t border-slate-800 grid grid-cols-2 gap-8 text-[11px] text-slate-400 print:text-gray-600">
-          <div>
-            <div className="h-10 border-b border-slate-700 mb-1" />
-            <div className="font-bold text-slate-200 print:text-black">Chief Internal Auditor</div>
-            <div>Head of Information Systems Audit</div>
+        {includeSignatures && (
+          <div className="pt-6 border-t border-slate-800 print:border-gray-300 grid grid-cols-2 gap-8 text-[11px] text-slate-400 print:text-gray-600">
+            <div>
+              <div className="h-10 border-b border-slate-700 print:border-gray-400 mb-1" />
+              <div className="font-bold text-slate-200 print:text-black">Chief Internal Auditor</div>
+              <div>Head of Information Systems Audit</div>
+            </div>
+            <div>
+              <div className="h-10 border-b border-slate-700 print:border-gray-400 mb-1" />
+              <div className="font-bold text-slate-200 print:text-black">Chairperson, Audit &amp; Risk Committee</div>
+              <div>Board of Directors</div>
+            </div>
           </div>
-          <div>
-            <div className="h-10 border-b border-slate-700 mb-1" />
-            <div className="font-bold text-slate-200 print:text-black">Chairperson, Audit &amp; Risk Committee</div>
-            <div>Board of Directors</div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

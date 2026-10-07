@@ -91,6 +91,15 @@ export interface AuditFinding {
   regulatoryClauses: string[];
   remediationActionSummary: string;
   milestones: { title: string; targetDate: string; completed: boolean }[];
+  changeHistory?: FindingChangeHistoryEntry[];
+  sentNotifications?: FindingNotificationRecord[];
+  mitigationPlanDetails?: {
+    leadAssignee?: string;
+    targetRemediationDate?: string;
+    budgetAllocation?: string;
+    compensatingControls?: string;
+    remediationStrategy?: 'Remediate' | 'Mitigate & Transfer' | 'Compensating Control' | 'System Replacement';
+  };
   threeLines: {
     line1Operations: { status: 'Deficient' | 'Remediating' | 'Compliant'; notes: string };
     line2Risk: { status: 'Deficient' | 'Monitoring' | 'Validated'; notes: string };
@@ -196,3 +205,90 @@ export interface LiveScanCheckResult {
   lastChecked: string;
   automatedRemediationAvailable: boolean;
 }
+
+export interface FindingChangeHistoryEntry {
+  id: string;
+  timestamp: string;
+  userName: string;
+  userRole: string;
+  actionType: 'Status Change' | 'Risk Assessment' | 'Rectification' | 'Mitigation Plan' | 'Notification Sent' | 'Target Date Extension';
+  summary: string;
+  previousValue?: string;
+  newValue?: string;
+}
+
+export interface FindingNotificationRecord {
+  id: string;
+  timestamp: string;
+  recipientName: string;
+  recipientEmail: string;
+  recipientRole: string;
+  channel: 'Email' | 'In-App' | 'SMS Alert';
+  triggerReason: 'Mitigation Deadline Approaching' | 'Status Changed to Overdue' | 'Executive Escalation' | 'Manual Notification';
+  subject: string;
+  messageBody: string;
+  status: 'Sent' | 'Delivered' | 'Pending';
+}
+
+export type AdminMessageBannerType = 'Critical Advisory' | 'Regulatory Notice' | 'Policy Update' | 'System Broadcast';
+export type AdminMessagePosition = 'Top Broadcast Ticker' | 'Executive Notice Hero' | 'Landing Announcement Card';
+
+export interface AdminLandingMessage {
+  id: string;
+  title: string;
+  content: string;
+  type: AdminMessageBannerType;
+  position: AdminMessagePosition;
+  active: boolean;
+  author: string;
+  authorRole: string;
+  lastUpdated: string;
+  priority: 'Urgent' | 'High' | 'Normal';
+  callToActionText?: string;
+  callToActionTab?: string;
+}
+
+export type AdminRole =
+  | 'Super Admin'
+  | 'Chief Internal Auditor'
+  | 'IS Audit Manager'
+  | 'Compliance Officer'
+  | 'Viewer';
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: AdminRole;
+  department: string;
+  lastLogin?: string;
+}
+
+export interface BankingISAuditStandard {
+  id: string;
+  code: string;
+  name: string;
+  authority: string;
+  category:
+    | 'Payment & Messaging'
+    | 'Prudential Supervision'
+    | 'Banking Regulators'
+    | 'Cardholder Security'
+    | 'International ISMS'
+    | 'IT Governance'
+    | 'Operational Resilience'
+    | 'Cyber Hygiene & Controls'
+    | 'Third-Party & Cloud Assurance'
+    | 'Threat Intelligence & Red Teaming';
+  scope: string;
+  mandatoryControlsCount: number;
+  compliantControlsCount: number;
+  adverseFindingsCount: number;
+  status: 'Compliant' | 'Partially Compliant' | 'Deficient / Remediation Required';
+  keyClauses: string[];
+  description: string;
+  applicability: string;
+}
+
+

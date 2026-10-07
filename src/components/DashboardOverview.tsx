@@ -24,12 +24,15 @@ import {
   AnnualAuditPlanQuarter,
   AuditResourceTeam,
   Severity,
+  AdminLandingMessage,
 } from '../types/audit';
 import { RiskAppetiteIndicator } from './RiskAppetiteIndicator';
 import { RiskAppetiteNotifications } from './RiskAppetiteNotifications';
 import { VulnerabilityAgingTrendChart } from './VulnerabilityAgingTrendChart';
 import { DepartmentalVulnerabilityAgingChart } from './DepartmentalVulnerabilityAgingChart';
 import { DepartmentalVulnerabilityHeatmap } from './DepartmentalVulnerabilityHeatmap';
+import { LandingBroadcastBar } from './LandingBroadcastBar';
+import { RegulatoryComplianceTrendChart } from './RegulatoryComplianceTrendChart';
 
 interface DashboardOverviewProps {
   findings: AuditFinding[];
@@ -37,6 +40,7 @@ interface DashboardOverviewProps {
   controlTests: ControlTestMatrixRow[];
   annualPlan: AnnualAuditPlanQuarter[];
   resourceTeams: AuditResourceTeam[];
+  landingMessages?: AdminLandingMessage[];
   onSelectFinding: (finding: AuditFinding) => void;
   onOpenAiForFinding: (finding: AuditFinding) => void;
   onNavigateToTab: (tab: string) => void;
@@ -50,6 +54,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   controlTests,
   annualPlan,
   resourceTeams,
+  landingMessages,
   onSelectFinding,
   onOpenAiForFinding,
   onNavigateToTab,
@@ -82,6 +87,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Front-side Landing Page Broadcast Banner */}
+      {landingMessages && (
+        <LandingBroadcastBar
+          messages={landingMessages}
+          onNavigateToTab={onNavigateToTab}
+        />
+      )}
+
       {/* 6 Top KPI Summary Cards (Faithfully matching Image top cards) */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {/* Card 1: Audit Universe */}
@@ -820,6 +833,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 6-Month Regulatory Compliance Score Trend (Recharts) */}
+      <RegulatoryComplianceTrendChart onNavigateToTab={onNavigateToTab} />
 
       {/* IT Risk Monitoring: 12-Month Vulnerability Aging Trend (Recharts) */}
       <VulnerabilityAgingTrendChart onNavigateToTab={onNavigateToTab} />

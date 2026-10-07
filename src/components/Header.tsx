@@ -9,8 +9,12 @@ import {
   PlusCircle,
   Building2,
   FileCheck2,
+  Radio,
+  Lock,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
-import { DomainKey, FindingStatus } from '../types/audit';
+import { DomainKey, FindingStatus, AdminUser } from '../types/audit';
 
 interface HeaderProps {
   selectedYear: string;
@@ -28,6 +32,10 @@ interface HeaderProps {
   onExport: () => void;
   onOpenAddRisk?: () => void;
   onOpenChecklist?: () => void;
+  adminUser?: AdminUser | null;
+  onOpenAdminLogin?: () => void;
+  onNavigateToAdmin?: () => void;
+  onAdminLogout?: () => void;
   isScanning: boolean;
 }
 
@@ -47,6 +55,10 @@ export const Header: React.FC<HeaderProps> = ({
   onExport,
   onOpenAddRisk,
   onOpenChecklist,
+  adminUser,
+  onOpenAdminLogin,
+  onNavigateToAdmin,
+  onAdminLogout,
   isScanning,
 }) => {
   return (
@@ -96,6 +108,41 @@ export const Header: React.FC<HeaderProps> = ({
               <FileCheck2 className="h-3.5 w-3.5 text-amber-400" />
               <span className="hidden md:inline">Policy Checklist</span>
             </button>
+          )}
+
+          {/* Secure Admin Portal Access (Username/Password Protected) */}
+          {adminUser ? (
+            <div className="flex items-center gap-1 bg-[#0b2447] border border-amber-500/50 rounded-md p-0.5 shadow-sm">
+              <button
+                onClick={onNavigateToAdmin}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-amber-300 hover:text-white transition-all cursor-pointer"
+                title={`Open Secure Admin Dashboard (Logged in as ${adminUser.displayName})`}
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                <span className="hidden sm:inline">[{adminUser.role}]</span>
+                <span>Admin Portal</span>
+              </button>
+              {onAdminLogout && (
+                <button
+                  onClick={onAdminLogout}
+                  className="p-1 text-rose-300 hover:text-white hover:bg-rose-950/70 rounded transition-all cursor-pointer"
+                  title="Sign out of Admin Session"
+                >
+                  <LogOut className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ) : (
+            onOpenAdminLogin && (
+              <button
+                onClick={onOpenAdminLogin}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0f2d52] hover:bg-[#163f73] text-amber-300 border border-amber-500/30 rounded-md transition-all shadow-sm cursor-pointer"
+                title="Sign in with username and password to access Admin Dashboard and manage broadcast messages"
+              >
+                <Lock className="h-3.5 w-3.5 text-amber-400" />
+                <span className="hidden md:inline">Admin Login</span>
+              </button>
+            )
           )}
 
           <button

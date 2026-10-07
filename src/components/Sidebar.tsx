@@ -11,7 +11,10 @@ import {
   Radio,
   FileText,
   Sparkles,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
+import { AdminUser } from '../types/audit';
 
 export type NavTab =
   | 'dashboard'
@@ -24,13 +27,16 @@ export type NavTab =
   | 'scanner'
   | 'assurance'
   | 'ai-advisor'
-  | 'reports';
+  | 'reports'
+  | 'admin';
 
 interface SidebarProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
   openFindingsCount: number;
   overdueCount: number;
+  adminUser?: AdminUser | null;
+  onOpenAdminLogin?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   openFindingsCount,
   overdueCount,
+  adminUser,
+  onOpenAdminLogin,
 }) => {
   const navItems = [
     {
@@ -154,6 +162,58 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Administration & GRC Category */}
+        <div className="pt-3 mt-2 border-t border-slate-800">
+          <div className="px-3 py-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase flex items-center justify-between">
+            <span>Administration &amp; GRC</span>
+            <span className="text-[9px] font-mono text-amber-400">RBAC</span>
+          </div>
+
+          <button
+            onClick={() => {
+              if (adminUser) {
+                setActiveTab('admin');
+              } else if (onOpenAdminLogin) {
+                onOpenAdminLogin();
+              }
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              activeTab === 'admin'
+                ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 font-bold shadow-md shadow-amber-950/40'
+                : adminUser
+                ? 'text-amber-300 hover:bg-slate-800/80 hover:text-white border border-amber-500/30'
+                : 'text-slate-400 hover:bg-slate-800/80 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 truncate">
+              {adminUser ? (
+                <ShieldCheck
+                  className={`h-4 w-4 shrink-0 ${
+                    activeTab === 'admin' ? 'text-slate-950 stroke-[2.5]' : 'text-amber-400'
+                  }`}
+                />
+              ) : (
+                <Lock className="h-4 w-4 shrink-0 text-slate-400" />
+              )}
+              <span className="truncate">
+                {adminUser ? 'Admin Dashboard' : 'Admin Portal'}
+              </span>
+            </div>
+
+            <span
+              className={`px-1.5 py-0.5 text-[10px] rounded-full shrink-0 font-bold ${
+                activeTab === 'admin'
+                  ? 'bg-slate-950 text-amber-300'
+                  : adminUser
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono text-[9px]'
+                  : 'bg-slate-800 text-slate-400 border border-slate-700 text-[9px]'
+              }`}
+            >
+              {adminUser ? adminUser.role : 'Auth Req'}
+            </span>
+          </button>
+        </div>
       </nav>
 
       {/* Bottom Status Card */}

@@ -15,6 +15,9 @@ import { RegulatoryComplianceChecklist } from './components/RegulatoryCompliance
 import { FindingDetailModal } from './components/FindingDetailModal';
 import { AiRemediationModal } from './components/AiRemediationModal';
 import { AddDepartmentalRiskModal } from './components/AddDepartmentalRiskModal';
+import { AdminPortalView } from './components/AdminPortalView';
+import { AdminLoginModal } from './components/AdminLoginModal';
+import { INITIAL_LANDING_MESSAGES } from './data/landingMessages';
 
 import {
   INITIAL_FINDINGS,
@@ -34,6 +37,8 @@ import {
   PolicyApprovalChecklistItem,
   RiskAssessmentStatus,
   AuditRectificationStatus,
+  AdminLandingMessage,
+  AdminUser,
 } from './types/audit';
 
 import { exportFindingsToCSV } from './utils/exportUtils';
@@ -47,6 +52,23 @@ export default function App() {
   const [resourceTeams, setResourceTeams] = useState(AUDIT_RESOURCE_TEAMS);
   const [scanChecks, setScanChecks] = useState<LiveScanCheckResult[]>(INITIAL_LIVE_SCAN_CHECKS);
   const [policyChecklist, setPolicyChecklist] = useState<PolicyApprovalChecklistItem[]>(INITIAL_POLICY_CHECKLIST);
+  const [landingMessages, setLandingMessages] = useState<AdminLandingMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem('hijra_landing_messages');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return INITIAL_LANDING_MESSAGES;
+  });
+
+  // Authenticated Admin Session with RBAC
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('hijra_admin_session');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  });
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
 
   // Global Navigation & Modals
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
@@ -177,6 +199,36 @@ export default function App() {
     }, 1800);
   };
 
+  const handleLoginSuccess = (user: AdminUser) => {
+    setAdminUser(user);
+    try {
+      localStorage.setItem('hijra_admin_session', JSON.stringify(user));
+    } catch (e) {}
+    setActiveTab('admin');
+  };
+
+  const handleLogout = () => {
+    setAdminUser(null);
+    try {
+      localStorage.removeItem('hijra_admin_session');
+    } catch (e) {}
+    if (activeTab === 'admin') {
+      setActiveTab('dashboard');
+    }
+  };
+
+  const handleSaveLandingMessages = (updated: AdminLandingMessage[]) => {
+    setLandingMessages(updated);
+    try {
+      localStorage.setItem('hijra_landing_messages', JSON.stringify(updated));
+    } catch (e) {}
+  };
+
+  const handleUpdateFindingFull = (updatedFinding: AuditFinding) => {
+    setFindings((prev) => prev.map((f) => (f.id === updatedFinding.id ? updatedFinding : f)));
+    setSelectedFindingForDetail(updatedFinding);
+  };
+
   const openFindingsCount = filteredFindings.filter((f) => f.status !== 'Remediated').length;
   const overdueCount = filteredFindings.filter((f) => f.status === 'Overdue' || f.agingDays > 90).length;
 
@@ -199,6 +251,10 @@ export default function App() {
         onExport={() => exportFindingsToCSV(filteredFindings)}
         onOpenAddRisk={() => setIsAddRiskModalOpen(true)}
         onOpenChecklist={() => setActiveTab('checklist')}
+        adminUser={adminUser}
+        onOpenAdminLogin={() => setIsAdminLoginModalOpen(true)}
+        onNavigateToAdmin={() => setActiveTab('admin')}
+        onAdminLogout={handleLogout}
         isScanning={isScanning}
       />
 
@@ -207,9 +263,17 @@ export default function App() {
         {/* Sidebar Navigation */}
         <Sidebar
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={(tab) => {
+            if (tab === 'admin' && !adminUser) {
+              setIsAdminLoginModalOpen(true);
+            } else {
+              setActiveTab(tab);
+            }
+          }}
           openFindingsCount={openFindingsCount}
           overdueCount={overdueCount}
+          adminUser={adminUser}
+          onOpenAdminLogin={() => setIsAdminLoginModalOpen(true)}
         />
 
         {/* Content Canvas */}
@@ -222,6 +286,7 @@ export default function App() {
                 controlTests={controlTests}
                 annualPlan={annualPlan}
                 resourceTeams={resourceTeams}
+                landingMessages={landingMessages}
                 onSelectFinding={(f) => setSelectedFindingForDetail(f)}
                 onOpenAiForFinding={(f) => setSelectedFindingForAi(f)}
                 onNavigateToTab={(tab) => setActiveTab(tab as NavTab)}
@@ -299,6 +364,34 @@ export default function App() {
                 controlTests={controlTests}
               />
             )}
+
+            {activeTab === 'admin' && (
+              adminUser ? (
+                <AdminPortalView
+                  currentUser={adminUser}
+                  onLogout={handleLogout}
+                  landingMessages={landingMessages}
+                  onSaveMessages={handleSaveLandingMessages}
+                  onNavigateToTab={(tab) => setActiveTab(tab as NavTab)}
+                />
+              ) : (
+                <div className="bg-[#0b2447] border border-amber-500/40 rounded-2xl p-8 text-center max-w-lg mx-auto my-12 shadow-2xl space-y-4">
+                  <div className="h-14 w-14 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mx-auto shadow-md">
+                    <span className="text-2xl font-bold font-mono">🔒</span>
+                  </div>
+                  <h2 className="text-lg font-bold text-white tracking-tight">Admin Access Restricted</h2>
+                  <p className="text-xs text-amber-200/80 leading-relaxed">
+                    Managing, editing, and deleting front-side landing page messages and administering banking IS audit standards requires an authenticated administrator session with appropriate RBAC privileges.
+                  </p>
+                  <button
+                    onClick={() => setIsAdminLoginModalOpen(true)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-lg text-xs shadow-lg shadow-amber-950/40 border border-amber-300/40 cursor-pointer transition-all"
+                  >
+                    Authenticate with Username &amp; Password
+                  </button>
+                </div>
+              )
+            )}
           </div>
         </main>
       </div>
@@ -314,6 +407,7 @@ export default function App() {
           }}
           onUpdateStatus={handleUpdateFindingStatus}
           onUpdateAssessmentAndRectification={handleUpdateFindingAssessmentAndRectification}
+          onUpdateFinding={handleUpdateFindingFull}
         />
       )}
 
@@ -333,6 +427,14 @@ export default function App() {
           onClose={() => setIsAddRiskModalOpen(false)}
           onAddRisk={handleAddDepartmentalRisk}
           totalFindingsCount={findings.length}
+        />
+      )}
+
+      {isAdminLoginModalOpen && (
+        <AdminLoginModal
+          isOpen={isAdminLoginModalOpen}
+          onClose={() => setIsAdminLoginModalOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
         />
       )}
     </div>
